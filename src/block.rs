@@ -1,12 +1,29 @@
 use dbus::arg::{Variant, RefArg};
 use std::collections::HashMap;
+use std::ops::Deref;
 use utils::*;
+
+pub struct EncryptedBlock<'a>(&'a Block);
+
+impl<'a> Deref for EncryptedBlock<'a> {
+    type Target = Block;
+    
+    fn deref(&self) -> &Block {
+        self.0
+    }
+}
+
+impl<'a> EncryptedBlock<'a> {
+    pub fn find_inner(&self, within: &'a [Block]) -> Option<&'a Block> {
+        within.iter().find(|b| &b.crypto_backing_device == &self.0.path)
+    }
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct Block {
     pub crypto_backing_device: String,
     pub device_number: u64,
-    pub device: Option<Vec<String>>,
+    pub device: String,
     pub drive: String,
     pub encrypted: Option<Encrypted>,
     pub hint_auto: bool,
@@ -28,13 +45,23 @@ pub struct Block {
     pub mount_points: Option<Vec<String>>,
     pub partition: Option<Partition>,
     pub path: String,
-    pub preferred_device: Option<Vec<String>>,
+    pub preferred_device: String,
     pub read_only: bool,
     pub size: u64,
     pub swapspace: Option<bool>,
     pub symlinks: Option<Vec<String>>,
     pub table: Option<PartitionTable>,
     pub userspace_mount_options: Option<Vec<String>>,
+}
+
+impl Block {
+    pub fn as_encrypted_device(&self) -> Option<EncryptedBlock> {
+        if self.encrypted.is_some() {
+            Some(EncryptedBlock(self))
+        } else {
+            None
+        }
+    }
 }
 
 impl ParseFrom for Block {
@@ -51,7 +78,7 @@ impl ParseFrom for Block {
                 for (key, ref value) in object {
                     match key.as_str() {
                         "CryptoBackingDevice" => block.crypto_backing_device = get_string(value).unwrap(),
-                        "Device" => block.device = get_string_array(value),
+                        "Device" => block.device = get_byte_array(value).unwrap(),
                         "DeviceNumber" => block.device_number = get_u64(value),
                         "Drive" => block.drive = get_string(value).unwrap(),
                         "HintAuto" => block.hint_auto = get_bool(value),
@@ -69,10 +96,10 @@ impl ParseFrom for Block {
                         "IdVersion" => block.id_version = get_string(value),
                         "MDRaid" => block.mdraid = get_string(value),
                         "MDRaidMember" => block.mdraid_member = get_string(value),
-                        "PreferredDevice" => block.device = get_string_array(value),
+                        "PreferredDevice" => block.preferred_device = get_byte_array(value).unwrap(),
                         "ReadOnly" => block.read_only = get_bool(value),
                         "Size" => block.size = get_u64(value),
-                        "Symlinks" => block.symlinks = get_string_array(value),
+                        "Symlinks" => block.symlinks = get_array_of_byte_arrays(value),
                         "UserspaceMountOptions" => block.userspace_mount_options = get_string_array(value),
                         _ => {
                             #[cfg(debug_assertions)]
@@ -130,7 +157,7 @@ impl ParseFrom for Block {
                     block.partition = Some(partition);
                 }
                 "org.freedesktop.UDisks2.Filesystem" => {
-                    block.mount_points = object.get("MountPoints").map_or(None, get_string_array);
+                    block.mount_points = object.get("MountPoints").map_or(None, get_array_of_byte_arrays);
                 }
                 "org.freedesktop.UDisks2.Encrypted" => {
                     let mut encrypted = Encrypted::default();

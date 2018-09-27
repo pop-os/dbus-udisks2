@@ -12,12 +12,25 @@ fn main() {
 }
 
 fn print(udisks2: &UDisks2) {
+    let mut blocks = Vec::new();
+    println!("Blocks");
     for block in udisks2.get_blocks() {
         println!("{:#?}", block);
+        blocks.push(block);
     }
 
+    println!("Drives");
     for drive in udisks2.get_drives() {
         println!("{:#?}", drive);
+    }
+
+    println!("Encrypted Devices");
+    for block in &blocks {
+        if let Some(enc) = block.as_encrypted_device() {
+            if let Some(inn) = enc.find_inner(&blocks) {
+                println!("{:?} contains LUKS device at {:?}", enc.path, inn.path);
+            }
+        }
     }
 }
 
