@@ -67,7 +67,7 @@ impl Drive {
                 "OpticalBlank" => self.optical_blank = get_bool(value),
                 "OpticalNumTracks" => self.optical_num_tracks = get_u64(value),
                 "OpticalNumAudioTracks" => self.optical_num_audio_tracks = get_u64(value),
-                "OpticalNumDataTracks" => self.optical_num_audio_tracks = get_u64(value),
+                "OpticalNumDataTracks" => self.optical_num_data_tracks = get_u64(value),
                 "OpticalNumSessions" => self.optical_num_sessions = get_u64(value),
                 "Removable" => self.removable = get_bool(value),
                 "Revision" => self.revision = get_string(value),

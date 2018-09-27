@@ -3,22 +3,6 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use utils::*;
 
-pub struct EncryptedBlock<'a>(&'a Block);
-
-impl<'a> Deref for EncryptedBlock<'a> {
-    type Target = Block;
-    
-    fn deref(&self) -> &Block {
-        self.0
-    }
-}
-
-impl<'a> EncryptedBlock<'a> {
-    pub fn find_inner(&self, within: &'a [Block]) -> Option<&'a Block> {
-        within.iter().find(|b| &b.crypto_backing_device == &self.0.path)
-    }
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct Block {
     pub crypto_backing_device: String,
@@ -55,9 +39,15 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn as_encrypted_device(&self) -> Option<EncryptedBlock> {
+    /// This will be true if this block contains an encrypted volume.
+    pub fn is_encrypted(&self) -> bool {
+        self.encrypted.is_some()
+    }
+
+    /// If this block contains an encrypted volume, find the block associated with it.
+    pub fn get_encrypted_block<'a>(&self, within: &'a [Block]) -> Option<&'a Block> {
         if self.encrypted.is_some() {
-            Some(EncryptedBlock(self))
+            within.iter().find(|b| &b.crypto_backing_device == &self.path)
         } else {
             None
         }
@@ -92,7 +82,7 @@ impl ParseFrom for Block {
                         "IdLabel" => block.id_label = get_string(value),
                         "IdType" => block.id_type = get_string(value),
                         "IdUsage" => block.id_usage = get_string(value),
-                        "IdUUID" => block.id_type = get_string(value),
+                        "IdUUID" => block.id_uuid = get_string(value),
                         "IdVersion" => block.id_version = get_string(value),
                         "MDRaid" => block.mdraid = get_string(value),
                         "MDRaidMember" => block.mdraid_member = get_string(value),

@@ -26,10 +26,8 @@ fn print(udisks2: &UDisks2) {
 
     println!("Encrypted Devices");
     for block in &blocks {
-        if let Some(enc) = block.as_encrypted_device() {
-            if let Some(inn) = enc.find_inner(&blocks) {
-                println!("{:?} contains LUKS device at {:?}", enc.path, inn.path);
-            }
+        if let Some(inn) = block.get_encrypted_block(&blocks) {
+            println!("{:?} contains LUKS device at {:?}", block.path, inn.path);
         }
     }
 }

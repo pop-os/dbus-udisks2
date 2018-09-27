@@ -1,6 +1,5 @@
 use dbus::arg::{Variant, RefArg};
 use std::collections::HashMap;
-use std::ffi::CString;
 
 pub fn get_string(arg: &Variant<Box<RefArg>>) -> Option<String> {
     arg.0.as_str().and_then(|x| {
