@@ -1,13 +1,17 @@
 extern crate dbus;
 
-pub mod block;
-pub mod drive;
+mod block;
+mod disks;
+mod drive;
 pub(crate) mod utils;
 
-use block::*;
+pub use self::block::*;
+pub use self::disks::*;
+pub use self::drive::*;
+
 use dbus::arg::{Variant, RefArg};
 use dbus::stdintf::org_freedesktop_dbus::*;
-use drive::*;
+
 use std::collections::HashMap;
 use std::ops::Deref;
 use utils::*;

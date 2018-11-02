@@ -1,40 +1,27 @@
 extern crate dbus_udisks2;
 
-use dbus_udisks2::UDisks2;
+use dbus_udisks2::{UDisks2, Disks};
 use std::env::args;
 
 fn main() {
-    let udisks2 = UDisks2::new().unwrap();
     match args().nth(1) {
-        Some(ref device) => print_block(&udisks2, device),
-        None => print(&udisks2)
+        Some(ref device) => print_block(device),
+        None => print()
     }
 }
 
-fn print(udisks2: &UDisks2) {
-    let mut blocks = Vec::new();
-    println!("Blocks");
-    for block in udisks2.get_blocks() {
-        println!("{:#?}", block);
-        blocks.push(block);
-    }
-
-    println!("Drives");
-    for drive in udisks2.get_drives() {
-        println!("{:#?}", drive);
-    }
-
-    println!("Encrypted Devices");
-    for block in &blocks {
-        if let Some(inn) = block.get_encrypted_block(&blocks) {
-            println!("{:?} contains LUKS device at {:?}", block.path, inn.path);
-        }
+fn print() {
+    let udisks2 = UDisks2::new().unwrap();
+    let disks = Disks::new(&udisks2);
+    for device in disks.devices {
+        println!("{:#?}", device);
     }
 }
 
-fn print_block(udisks2: &UDisks2, block_name: &str) {
+fn print_block(block_name: &str) {
+    let udisks2 = UDisks2::new().unwrap();
     for block in udisks2.get_blocks() {
-        if block.path.ends_with(block_name) {
+        if block.device.to_str().unwrap() == block_name {
             println!("{:#?}", block);
         }
     }
