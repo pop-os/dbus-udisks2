@@ -78,7 +78,7 @@ impl ParseFrom for Block {
                         "HintPartitionable" => block.hint_partitionable = get_bool(value),
                         "HintSymbolicIconName" => block.hint_symbolic_icon_name = get_string(value),
                         "HintSystem" => block.hint_system = get_bool(value),
-                        "Id" => block.id = get_string(value).expect("block without ID"),
+                        "Id" => block.id = get_string(value).unwrap_or_default(),
                         "IdLabel" => block.id_label = get_string(value),
                         "IdType" => block.id_type = get_string(value),
                         "IdUsage" => block.id_usage = get_string(value),
@@ -185,7 +185,7 @@ impl ParseFrom for Block {
                         match key.as_str() {
                             "Type" => partition.type_ = get_string(value).unwrap_or_default(),
                             "Name" => partition.name = get_string(value).unwrap_or_default(),
-                            "UUID" => partition.uuid = get_string(value).expect("partition lacks a UUID"),
+                            "UUID" => partition.uuid = get_string(value).unwrap_or_default(),
                             "Table" => partition.table = get_string(value).expect("partition is not part of a table"),
                             "Flags" => partition.flags = get_u64(value),
                             "Offset" => partition.offset = get_u64(value),
@@ -212,9 +212,9 @@ impl ParseFrom for Block {
                     let mut encrypted = Encrypted::default();
                     for (key, ref value) in object {
                         match key.as_str() {
-                            "HintEncryptionType" => encrypted.hint_encryption_type = get_string(value).unwrap(),
+                            "HintEncryptionType" => encrypted.hint_encryption_type = get_string(value).unwrap_or_default(),
                             "MetadataSize" => encrypted.metadata_size = get_u64(value),
-                            "CleartextDevice" => encrypted.cleartext_device = get_string(value).unwrap(),
+                            "CleartextDevice" => encrypted.cleartext_device = get_string(value).unwrap_or_default(),
                             _ => {
                                 #[cfg(debug_assertions)]
                                 eprintln!("unhandled org.freedesktop.UDisks2.Encrypted.{}", key);
