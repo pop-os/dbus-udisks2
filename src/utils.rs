@@ -24,29 +24,37 @@ pub fn get_string_array(arg: &Variant<Box<RefArg>>) -> Option<Vec<String>> {
 }
 
 pub fn get_byte_array(arg: &Variant<Box<RefArg>>) -> Option<String> {
-    arg.0.as_iter().and_then(|bytes| {
-        let inner_vec = bytes.flat_map(|byte| byte.as_u64().map(|x| x as u8))
+    atostr(arg.0.as_iter())
+}
+
+pub fn atostr<'a>(array: Option<Box<Iterator<Item = &'a RefArg> + 'a>>) -> Option<String> {
+    array.and_then(|bytes| {
+        let mut inner_vec = bytes.flat_map(|byte| byte.as_u64().map(|x| x as u8))
             .collect::<Vec<u8>>();
-        String::from_utf8(inner_vec).ok().map(|mut x| {
-            x.pop();
-            x
-        })
+
+        if inner_vec.last() == Some(&0) {
+            inner_vec.pop();
+        }
+
+        String::from_utf8(inner_vec).ok()
     })
+}
+
+pub fn vva(value: &RefArg) -> Option<String> {
+    let viter = value.as_iter().and_then(|mut i| {
+        i.next().and_then(|i| {
+            i.as_iter().and_then(|mut i| {
+                i.next().and_then(|i| i.as_iter())
+            })
+        })
+    });
+
+    atostr(viter)
 }
 
 pub fn get_array_of_byte_arrays(arg: &Variant<Box<RefArg>>) -> Option<Vec<String>> {
     arg.0.as_iter().and_then(|items| {
-            let vector = items.flat_map(|item| {
-                item.as_iter()
-                    .and_then(|bytes| {
-                        let inner_vec = bytes.flat_map(|byte| byte.as_u64().map(|x| x as u8))
-                            .collect::<Vec<u8>>();
-                        String::from_utf8(inner_vec).ok().map(|mut x| {
-                            x.pop();
-                            x
-                        })
-                    })
-            }).collect::<Vec<_>>();
+            let vector = items.flat_map(|item| atostr(item.as_iter())).collect::<Vec<_>>();
             if vector.is_empty() { None } else { Some(vector) }
         })
 }

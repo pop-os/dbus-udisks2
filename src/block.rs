@@ -36,6 +36,7 @@ pub struct Block {
     pub symlinks: Vec<PathBuf>,
     pub table: Option<PartitionTable>,
     pub userspace_mount_options: Vec<String>,
+    pub configuration: Option<BlockConfiguration>,
 }
 
 impl Block {
@@ -98,22 +99,20 @@ impl ParseFrom for Block {
                         "Configuration" => {
                             let mut configuration = BlockConfiguration::default();
                             for value in value.as_iter().unwrap() {
-                                eprintln!("creating iter");
                                 if let Some(mut iterator) = value.as_iter() {
                                     if let Some(mut iterator) = iterator.next().and_then(|i| i.as_iter()) {
                                         if let (Some(key), Some(mut array)) = (iterator.next(), iterator.next().and_then(|i| i.as_iter())) {
                                             if let Some(key) = key.as_str() {
-                                                eprintln!("KEY: {}", key);
                                                 if key == "fstab" {
                                                     while let (Some(key), Some(value)) = (array.next(), array.next()) {
                                                         if let Some(key) = key.as_str() {
                                                             match key {
-                                                                // "fsname" =>
-                                                                // "dir" =>
-                                                                // "type" =>
-                                                                // "opts" =>
-                                                                // "freq" =>
-                                                                // "passno" =>
+                                                                "fsname" => configuration.fstab.fsname = vva(value).unwrap_or_default(),
+                                                                "dir" => configuration.fstab.dir = vva(value).unwrap_or_default(),
+                                                                "type" => configuration.fstab.type_ = vva(value).unwrap_or_default(),
+                                                                "opts" => configuration.fstab.opts = vva(value).unwrap_or_default(),
+                                                                "freq" => configuration.fstab.freq = value.as_u64().unwrap_or_default() as i32,
+                                                                "passno" => configuration.fstab.passno = value.as_u64().unwrap_or_default() as i32,
                                                                 _ => {
                                                                     eprintln!("unhandled block config fstab key: {:?}, {:?}", key, value);
                                                                 }
@@ -124,10 +123,10 @@ impl ParseFrom for Block {
                                                     while let (Some(key), Some(value)) = (array.next(), array.next()) {
                                                         if let Some(key) = key.as_str() {
                                                             match key {
-                                                                // "name" =>
-                                                                // "device" =>
-                                                                // "passphrase_path" =>
-                                                                // "opts" =>
+                                                                "name" => configuration.crypttab.name = vva(value).unwrap_or_default(),
+                                                                "device" => configuration.crypttab.device = vva(value).unwrap_or_default(),
+                                                                "passphrase-path" => configuration.crypttab.passphrase_path = vva(value).unwrap_or_default(),
+                                                                "options" => configuration.crypttab.options = vva(value).unwrap_or_default(),
                                                                 _ => {
                                                                     eprintln!("unhandled block config crypttab key: {:?}, {:?}", key, value);
                                                                 }
@@ -142,6 +141,8 @@ impl ParseFrom for Block {
                                     }
                                 }
                             }
+
+                            block.configuration = Some(configuration);
                         }
                         _ => {
                             #[cfg(debug_assertions)]
@@ -256,7 +257,7 @@ pub struct BlockConfigurationCrypttab {
     name: String,
     device: String,
     passphrase_path: String,
-    opts: String,
+    options: String,
 }
 
 #[derive(Clone, Debug, Default)]
