@@ -1,12 +1,12 @@
 extern crate dbus_udisks2;
 
-use dbus_udisks2::{UDisks2, Disks};
+use dbus_udisks2::{Disks, UDisks2};
 use std::env::args;
 
 fn main() {
     match args().nth(1) {
         Some(ref device) => print_block(device),
-        None => print()
+        None => print(),
     }
 }
 

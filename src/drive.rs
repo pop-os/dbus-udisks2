@@ -1,4 +1,4 @@
-use dbus::arg::{Variant, RefArg};
+use dbus::arg::{RefArg, Variant};
 use std::collections::HashMap;
 use utils::*;
 
@@ -36,7 +36,10 @@ pub struct Drive {
 }
 
 impl ParseFrom for Drive {
-    fn parse_from(path: &str, objects: &HashMap<String, HashMap<String, Variant<Box<RefArg>>>>) -> Option<Drive> {
+    fn parse_from(
+        path: &str,
+        objects: &HashMap<String, HashMap<String, Variant<Box<RefArg>>>>,
+    ) -> Option<Drive> {
         if let Some(object) = objects.get("org.freedesktop.UDisks2.Drive") {
             let mut drive = Drive::default();
             drive.path = path.to_owned();
@@ -60,7 +63,9 @@ impl Drive {
                 "Media" => self.media = get_string(value),
                 "MediaAvailable" => self.media_available = get_bool(value),
                 "MediaChangeDetected" => self.media_change_detected = get_bool(value),
-                "MediaCompatibility" => self.media_compatibility = get_string_array(value).unwrap_or_default(),
+                "MediaCompatibility" => {
+                    self.media_compatibility = get_string_array(value).unwrap_or_default()
+                }
                 "MediaRemovable" => self.media_removable = get_bool(value),
                 "Model" => self.model = get_string(value).unwrap_or_default(),
                 "Optical" => self.optical = get_bool(value),
