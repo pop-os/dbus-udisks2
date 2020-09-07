@@ -244,20 +244,20 @@ pub struct BlockConfiguration {
 
 #[derive(Clone, Debug, Default)]
 pub struct BlockConfigurationFstab {
-    fsname: String,
-    dir: String,
-    type_: String,
-    opts: String,
-    freq: i32,
-    passno: i32,
+    pub fsname: String,
+    pub dir: String,
+    pub type_: String,
+    pub opts: String,
+    pub freq: i32,
+    pub passno: i32,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct BlockConfigurationCrypttab {
-    name: String,
-    device: String,
-    passphrase_path: String,
-    options: String,
+    pub name: String,
+    pub device: String,
+    pub passphrase_path: String,
+    pub options: String,
 }
 
 #[derive(Clone, Debug, Default)]
