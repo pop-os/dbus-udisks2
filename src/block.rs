@@ -1,5 +1,5 @@
-use dbus::arg::{RefArg, Variant};
-use std::collections::HashMap;
+use crate::DbusObjects;
+use dbus::arg::RefArg;
 use std::path::PathBuf;
 use utils::*;
 
@@ -56,10 +56,7 @@ impl Block {
 }
 
 impl ParseFrom for Block {
-    fn parse_from(
-        path: &str,
-        objects: &HashMap<String, HashMap<String, Variant<Box<RefArg>>>>,
-    ) -> Option<Block> {
+    fn parse_from(path: &str, objects: &DbusObjects) -> Option<Block> {
         if objects.get("org.freedesktop.UDisks2.Loop").is_some() {
             return None;
         }

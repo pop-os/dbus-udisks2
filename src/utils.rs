@@ -1,7 +1,7 @@
+use crate::DbusObjects;
 use dbus::arg::{RefArg, Variant};
-use std::collections::HashMap;
 
-pub fn get_string(arg: &Variant<Box<RefArg>>) -> Option<String> {
+pub fn get_string(arg: &Variant<Box<dyn RefArg>>) -> Option<String> {
     arg.0.as_str().and_then(|x| {
         if x.is_empty() {
             None
@@ -11,15 +11,15 @@ pub fn get_string(arg: &Variant<Box<RefArg>>) -> Option<String> {
     })
 }
 
-pub fn get_u64(arg: &Variant<Box<RefArg>>) -> u64 {
+pub fn get_u64(arg: &Variant<Box<dyn RefArg>>) -> u64 {
     arg.0.as_u64().unwrap_or(0)
 }
 
-pub fn get_bool(arg: &Variant<Box<RefArg>>) -> bool {
+pub fn get_bool(arg: &Variant<Box<dyn RefArg>>) -> bool {
     arg.0.as_u64().unwrap_or(0) != 0
 }
 
-pub fn get_string_array(arg: &Variant<Box<RefArg>>) -> Option<Vec<String>> {
+pub fn get_string_array(arg: &Variant<Box<dyn RefArg>>) -> Option<Vec<String>> {
     arg.0.as_iter().and_then(|items| {
         let vector = items
             .flat_map(|item| item.as_str().map(String::from))
@@ -32,11 +32,11 @@ pub fn get_string_array(arg: &Variant<Box<RefArg>>) -> Option<Vec<String>> {
     })
 }
 
-pub fn get_byte_array(arg: &Variant<Box<RefArg>>) -> Option<String> {
+pub fn get_byte_array(arg: &Variant<Box<dyn RefArg>>) -> Option<String> {
     atostr(arg.0.as_iter())
 }
 
-pub fn atostr<'a>(array: Option<Box<Iterator<Item = &'a RefArg> + 'a>>) -> Option<String> {
+pub fn atostr<'a>(array: Option<Box<dyn Iterator<Item = &'a dyn RefArg> + 'a>>) -> Option<String> {
     array.and_then(|bytes| {
         let mut inner_vec = bytes
             .flat_map(|byte| byte.as_u64().map(|x| x as u8))
@@ -50,7 +50,7 @@ pub fn atostr<'a>(array: Option<Box<Iterator<Item = &'a RefArg> + 'a>>) -> Optio
     })
 }
 
-pub fn vva(value: &RefArg) -> Option<String> {
+pub fn vva(value: &dyn RefArg) -> Option<String> {
     let viter = value.as_iter().and_then(|mut i| {
         i.next().and_then(|i| {
             i.as_iter()
@@ -61,7 +61,7 @@ pub fn vva(value: &RefArg) -> Option<String> {
     atostr(viter)
 }
 
-pub fn get_array_of_byte_arrays(arg: &Variant<Box<RefArg>>) -> Option<Vec<String>> {
+pub fn get_array_of_byte_arrays(arg: &Variant<Box<dyn RefArg>>) -> Option<Vec<String>> {
     arg.0.as_iter().and_then(|items| {
         let vector = items
             .flat_map(|item| atostr(item.as_iter()))
@@ -75,10 +75,7 @@ pub fn get_array_of_byte_arrays(arg: &Variant<Box<RefArg>>) -> Option<Vec<String
 }
 
 pub(crate) trait ParseFrom {
-    fn parse_from(
-        path: &str,
-        objects: &HashMap<String, HashMap<String, Variant<Box<RefArg>>>>,
-    ) -> Option<Self>
+    fn parse_from(path: &str, objects: &DbusObjects) -> Option<Self>
     where
         Self: Sized;
 }

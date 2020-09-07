@@ -3,11 +3,11 @@ extern crate dbus;
 mod block;
 mod disks;
 mod drive;
-pub(crate) mod utils;
+mod utils;
 
-pub use self::block::*;
-pub use self::disks::*;
-pub use self::drive::*;
+pub use block::*;
+pub use disks::*;
+pub use drive::*;
 
 use dbus::arg::{RefArg, Variant};
 
@@ -18,12 +18,14 @@ use std::ops::Deref;
 use std::time::Duration;
 use utils::*;
 
+type DbusObjects = HashMap<String, HashMap<String, Variant<Box<dyn RefArg>>>>;
+
 const DEST: &str = "org.freedesktop.UDisks2";
 const PATH: &str = "/org/freedesktop/UDisks2";
 
 pub struct UDisks2 {
     conn: Connection,
-    cache: HashMap<dbus::Path<'static>, HashMap<String, HashMap<String, Variant<Box<RefArg>>>>>,
+    cache: HashMap<dbus::Path<'static>, DbusObjects>,
 }
 
 impl UDisks2 {

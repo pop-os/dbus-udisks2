@@ -1,3 +1,4 @@
+use crate::DbusObjects;
 use dbus::arg::{RefArg, Variant};
 use std::collections::HashMap;
 use utils::*;
@@ -36,10 +37,7 @@ pub struct Drive {
 }
 
 impl ParseFrom for Drive {
-    fn parse_from(
-        path: &str,
-        objects: &HashMap<String, HashMap<String, Variant<Box<RefArg>>>>,
-    ) -> Option<Drive> {
+    fn parse_from(path: &str, objects: &DbusObjects) -> Option<Drive> {
         if let Some(object) = objects.get("org.freedesktop.UDisks2.Drive") {
             let mut drive = Drive::default();
             drive.path = path.to_owned();
@@ -53,7 +51,7 @@ impl ParseFrom for Drive {
 }
 
 impl Drive {
-    fn parse(&mut self, objects: &HashMap<String, Variant<Box<RefArg>>>) {
+    fn parse(&mut self, objects: &HashMap<String, Variant<Box<dyn RefArg>>>) {
         for (key, ref value) in objects {
             match key.as_str() {
                 "CanPowerOff" => self.can_power_off = get_bool(value),
