@@ -1,7 +1,7 @@
+use crate::utils::*;
 use crate::DbusObjects;
 use dbus::arg::RefArg;
 use std::path::PathBuf;
-use utils::*;
 
 #[derive(Clone, Debug, Default)]
 pub struct Block {

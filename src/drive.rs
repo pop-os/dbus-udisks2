@@ -1,7 +1,7 @@
+use crate::utils::*;
 use crate::DbusObjects;
 use dbus::arg::{RefArg, Variant};
 use std::collections::HashMap;
-use utils::*;
 
 #[derive(Clone, Debug, Default)]
 pub struct Drive {

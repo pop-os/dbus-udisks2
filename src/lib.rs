@@ -9,16 +9,12 @@ pub use block::*;
 pub use disks::*;
 pub use drive::*;
 
-use dbus::arg::{RefArg, Variant};
-
 use dbus::blocking::stdintf::org_freedesktop_dbus::ObjectManager;
 use dbus::blocking::{Connection, Proxy};
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::time::Duration;
 use utils::*;
-
-type DbusObjects = HashMap<String, HashMap<String, Variant<Box<dyn RefArg>>>>;
 
 const DEST: &str = "org.freedesktop.UDisks2";
 const PATH: &str = "/org/freedesktop/UDisks2";

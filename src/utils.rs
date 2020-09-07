@@ -1,5 +1,7 @@
-use crate::DbusObjects;
 use dbus::arg::{RefArg, Variant};
+use std::collections::HashMap;
+
+pub type DbusObjects = HashMap<String, HashMap<String, Variant<Box<dyn RefArg>>>>;
 
 pub fn get_string(arg: &Variant<Box<dyn RefArg>>) -> Option<String> {
     arg.0.as_str().and_then(|x| {

@@ -1,6 +1,7 @@
 [package]
 name = "dbus-udisks2"
 version = "0.2.0"
+edition = "2018"
 description = "UDisks2 DBus API"
 repository = "https://github.com/pop-os/dbus-udisks2"
 authors = ["Michael Aaron Murphy <mmstickman@gmail.com>"]
