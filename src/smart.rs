@@ -147,6 +147,13 @@ impl fmt::Display for PrettyValue {
     }
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum SmartAssessment {
+    Failing,
+    FailedInPast,
+    Ok,
+}
+
 #[derive(Clone, Debug)]
 /// A S.M.A.R.T. attribute.
 pub struct SmartAttribute {
@@ -164,6 +171,25 @@ pub struct SmartAttribute {
     pub threshold: i32,
     /// An interpretation of the value
     pub pretty: Option<PrettyValue>,
+}
+
+impl SmartAttribute {
+    /// Whether this attribute determines if the drive is failing (`true`) or simply old (`false`).
+    pub fn pre_fail(&self) -> bool {
+        self.flags & 0x01 != 0
+    }
+    pub fn online(&self) -> bool {
+        self.flags & 0x02 != 0
+    }
+    pub fn assessment(&self) -> SmartAssessment {
+        if self.value > 0 && self.threshold > 0 && self.value <= self.threshold {
+            SmartAssessment::Failing
+        } else if self.worst > 0 && self.threshold > 0 && self.worst <= self.threshold {
+            SmartAssessment::FailedInPast
+        } else {
+            SmartAssessment::Ok
+        }
+    }
 }
 
 impl From<RawSmartAttribute> for SmartAttribute {
