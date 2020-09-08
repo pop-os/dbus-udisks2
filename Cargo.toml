@@ -1,6 +1,6 @@
 [package]
 name = "dbus-udisks2"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2018"
 description = "UDisks2 DBus API"
 repository = "https://github.com/pop-os/dbus-udisks2"
@@ -11,10 +11,10 @@ readme = "README.md"
 [dependencies]
 dbus = "0.8.4"
 num_enum = "0.5.1"
-futures-util = { version = "0.3", features=["async-await"], optional = true }
+futures-util = { version = "0.3", features = ["async-await"], optional = true }
 
 [dev-dependencies]
-tokio = { version = "0.2.4", features=["macros"] }
+tokio = { version = "0.2.4", features = ["macros"] }
 dbus-tokio = "0.5.2"
 
 [features]
