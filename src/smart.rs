@@ -174,13 +174,53 @@ pub struct SmartAttribute {
 }
 
 impl SmartAttribute {
-    /// Whether this attribute determines if the drive is failing (`true`) or simply old (`false`).
+    // from https://github.com/smartmontools/smartmontools/blob/ff9fbe7300064cc6ec45a78c162f0166c770c4b0/smartmontools/atacmds.h#L150
+
+    /// Whether this attribute determines if the drive is failing (`true`) or old (`false`).
+    ///
+    /// From SFF 8035i Revision 2 page 19:
+    ///
+    /// Bit 0 (pre-failure/advisory bit) - If the value of this bit equals zero, an attribute value
+    /// less than or equal to its corresponding attribute threshold indicates an advisory condition
+    /// where the usage or age of the device has exceeded its intended design life period. If the
+    /// value of this bit equals one, an attribute value less than or equal to its corresponding
+    /// attribute threshold indicates a prefailure condition where imminent loss of data is being
+    /// predicted.
+    ///
+    /// ---
+    ///
+    /// From [SMART Attribute Overview](http://www.t13.org/Documents/UploadedDocuments/docs2005/e05171r0-ACS-SMARTAttributes_Overview.pdf):
+    ///
+    /// 0: Advisory: The usage of age of the device has exceeded its intended design life period \
+    /// 1: Pre-failure notification: Failure is predicted within 24 hours
     pub fn pre_fail(&self) -> bool {
-        self.flags & 0x01 != 0
+        self.flags & 0x01 > 0
     }
+    /// From SFF 8035i Revision 2 page 19:
+    ///
+    /// Bit 1 (on-line data collection bit) - If the value of this bit equals zero, then the
+    /// attribute value is updated only during off-line data collection activities. If the value of
+    /// this bit equals one, then the attribute value is updated during normal operation of the
+    /// device or during both normal operation and off-line testing.
     pub fn online(&self) -> bool {
-        self.flags & 0x02 != 0
+        self.flags & 0x02 > 0
     }
+    /// `true`: speed/performance
+    pub fn performance(&self) -> bool {
+        self.flags & 0x04 > 0
+    }
+    pub fn error_rate(&self) -> bool {
+        self.flags & 0x08 > 0
+    }
+    pub fn event_count(&self) -> bool {
+        self.flags & 0x10 > 0
+    }
+    pub fn self_preserving(&self) -> bool {
+        self.flags & 0x20 > 0
+    }
+    /// Assess the disk's state.
+    ///
+    /// From https://github.com/GNOME/gnome-disk-utility/blob/5baa52eff3036fc59648bc2e10c4d4ec69dec50b/src/disks/gduatasmartdialog.c#L678
     pub fn assessment(&self) -> SmartAssessment {
         if self.normalized > 0 && self.threshold > 0 && self.normalized <= self.threshold {
             SmartAssessment::Failing
