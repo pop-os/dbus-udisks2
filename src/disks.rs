@@ -18,7 +18,7 @@ pub struct DiskDevice {
 }
 
 impl Disks {
-    pub fn new(udisks2: &UDisks2) -> Self {
+    fn new_cache(udisks2: &DiskCache) -> Self {
         let mut devices = Vec::new();
 
         let mut blocks = Vec::new();
@@ -49,5 +49,12 @@ impl Disks {
         }
 
         Disks { devices }
+    }
+    pub fn new(udisks2: &UDisks2) -> Self {
+        Disks::new_cache(&udisks2.cache)
+    }
+    #[cfg(feature = "futures")]
+    pub fn new_async<C>(udisks2: &crate::AsyncUDisks2<C>) -> Self {
+        Disks::new_cache(&udisks2.cache)
     }
 }

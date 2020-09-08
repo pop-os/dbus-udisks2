@@ -1,5 +1,3 @@
-extern crate dbus_udisks2;
-
 use dbus_udisks2::{Disks, UDisks2};
 use std::env::args;
 
@@ -15,6 +13,9 @@ fn print() {
     let disks = Disks::new(&udisks2);
     for device in disks.devices {
         println!("{:#?}", device);
+        if let Ok(smart_data) = udisks2.smart_attributes(&device.drive, true) {
+            println!("{:#?}", smart_data);
+        }
     }
 }
 

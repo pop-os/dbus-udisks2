@@ -1,7 +1,5 @@
 use crate::utils::*;
 use crate::DbusObjects;
-use dbus::arg::{RefArg, Variant};
-use std::collections::HashMap;
 
 #[derive(Clone, Debug, Default)]
 pub struct Drive {
@@ -51,7 +49,7 @@ impl ParseFrom for Drive {
 }
 
 impl Drive {
-    fn parse(&mut self, objects: &HashMap<String, Variant<Box<dyn RefArg>>>) {
+    fn parse(&mut self, objects: &KeyVariant) {
         for (key, ref value) in objects {
             match key.as_str() {
                 "CanPowerOff" => self.can_power_off = get_bool(value),
@@ -90,5 +88,11 @@ impl Drive {
                 }
             }
         }
+    }
+}
+
+impl<'a> From<&'a Drive> for dbus::Path<'a> {
+    fn from(drive: &'a Drive) -> Self {
+        (&drive.path).into()
     }
 }
