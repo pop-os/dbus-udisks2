@@ -1,6 +1,5 @@
-use dbus::arg::{Variant, RefArg};
-use std::collections::HashMap;
-use utils::*;
+use crate::utils::*;
+use crate::DbusObjects;
 
 #[derive(Clone, Debug, Default)]
 pub struct Drive {
@@ -36,7 +35,7 @@ pub struct Drive {
 }
 
 impl ParseFrom for Drive {
-    fn parse_from(path: &str, objects: &HashMap<String, HashMap<String, Variant<Box<RefArg>>>>) -> Option<Drive> {
+    fn parse_from(path: &str, objects: &DbusObjects) -> Option<Drive> {
         if let Some(object) = objects.get("org.freedesktop.UDisks2.Drive") {
             let mut drive = Drive::default();
             drive.path = path.to_owned();
@@ -50,7 +49,7 @@ impl ParseFrom for Drive {
 }
 
 impl Drive {
-    fn parse(&mut self, objects: &HashMap<String, Variant<Box<RefArg>>>) {
+    fn parse(&mut self, objects: &KeyVariant) {
         for (key, ref value) in objects {
             match key.as_str() {
                 "CanPowerOff" => self.can_power_off = get_bool(value),
@@ -60,7 +59,9 @@ impl Drive {
                 "Media" => self.media = get_string(value),
                 "MediaAvailable" => self.media_available = get_bool(value),
                 "MediaChangeDetected" => self.media_change_detected = get_bool(value),
-                "MediaCompatibility" => self.media_compatibility = get_string_array(value).unwrap_or_default(),
+                "MediaCompatibility" => {
+                    self.media_compatibility = get_string_array(value).unwrap_or_default()
+                }
                 "MediaRemovable" => self.media_removable = get_bool(value),
                 "Model" => self.model = get_string(value).unwrap_or_default(),
                 "Optical" => self.optical = get_bool(value),
@@ -87,5 +88,11 @@ impl Drive {
                 }
             }
         }
+    }
+}
+
+impl<'a> From<&'a Drive> for dbus::Path<'a> {
+    fn from(drive: &'a Drive) -> Self {
+        (&drive.path).into()
     }
 }

@@ -1,7 +1,7 @@
-use dbus::arg::{Variant, RefArg};
-use std::collections::HashMap;
+use crate::utils::*;
+use crate::DbusObjects;
+use dbus::arg::RefArg;
 use std::path::PathBuf;
-use utils::*;
 
 #[derive(Clone, Debug, Default)]
 pub struct Block {
@@ -56,7 +56,7 @@ impl Block {
 }
 
 impl ParseFrom for Block {
-    fn parse_from(path: &str, objects: &HashMap<String, HashMap<String, Variant<Box<RefArg>>>>) -> Option<Block> {
+    fn parse_from(path: &str, objects: &DbusObjects) -> Option<Block> {
         if objects.get("org.freedesktop.UDisks2.Loop").is_some() {
             return None;
         }
@@ -68,7 +68,9 @@ impl ParseFrom for Block {
             Some(object) => {
                 for (key, ref value) in object {
                     match key.as_str() {
-                        "CryptoBackingDevice" => block.crypto_backing_device = get_string(value).unwrap(),
+                        "CryptoBackingDevice" => {
+                            block.crypto_backing_device = get_string(value).unwrap()
+                        }
                         "Device" => block.device = PathBuf::from(get_byte_array(value).unwrap()),
                         "DeviceNumber" => block.device_number = get_u64(value),
                         "Drive" => block.drive = get_string(value).unwrap(),
@@ -85,34 +87,80 @@ impl ParseFrom for Block {
                         "IdUsage" => block.id_usage = get_string(value),
                         "IdUUID" => block.id_uuid = get_string(value),
                         "IdVersion" => block.id_version = get_string(value),
-                        "MDRaid" => block.mdraid = get_string(value).map(PathBuf::from).unwrap_or_default(),
-                        "MDRaidMember" => block.mdraid_member = get_string(value).map(PathBuf::from).unwrap_or_default(),
-                        "PreferredDevice" => block.preferred_device = PathBuf::from(get_byte_array(value).unwrap()),
+                        "MDRaid" => {
+                            block.mdraid = get_string(value).map(PathBuf::from).unwrap_or_default()
+                        }
+                        "MDRaidMember" => {
+                            block.mdraid_member =
+                                get_string(value).map(PathBuf::from).unwrap_or_default()
+                        }
+                        "PreferredDevice" => {
+                            block.preferred_device = PathBuf::from(get_byte_array(value).unwrap())
+                        }
                         "ReadOnly" => block.read_only = get_bool(value),
                         "Size" => block.size = get_u64(value),
-                        "Symlinks" => block.symlinks = get_array_of_byte_arrays(value)
-                            .map(|paths| paths.into_iter().map(PathBuf::from).collect::<Vec<_>>())
-                            .unwrap_or_default(),
+                        "Symlinks" => {
+                            block.symlinks = get_array_of_byte_arrays(value)
+                                .map(|paths| {
+                                    paths.into_iter().map(PathBuf::from).collect::<Vec<_>>()
+                                })
+                                .unwrap_or_default()
+                        }
                         "UserspaceMountOptions" => {
-                            block.userspace_mount_options = get_string_array(value).unwrap_or_default()
-                        },
+                            block.userspace_mount_options =
+                                get_string_array(value).unwrap_or_default()
+                        }
                         "Configuration" => {
                             let mut configuration = BlockConfiguration::default();
                             for value in value.as_iter().unwrap() {
                                 if let Some(mut iterator) = value.as_iter() {
-                                    if let Some(mut iterator) = iterator.next().and_then(|i| i.as_iter()) {
-                                        if let (Some(key), Some(mut array)) = (iterator.next(), iterator.next().and_then(|i| i.as_iter())) {
+                                    if let Some(mut iterator) =
+                                        iterator.next().and_then(|i| i.as_iter())
+                                    {
+                                        if let (Some(key), Some(mut array)) = (
+                                            iterator.next(),
+                                            iterator.next().and_then(|i| i.as_iter()),
+                                        ) {
                                             if let Some(key) = key.as_str() {
                                                 if key == "fstab" {
-                                                    while let (Some(key), Some(value)) = (array.next(), array.next()) {
+                                                    while let (Some(key), Some(value)) =
+                                                        (array.next(), array.next())
+                                                    {
                                                         if let Some(key) = key.as_str() {
                                                             match key {
-                                                                "fsname" => configuration.fstab.fsname = vva(value).unwrap_or_default(),
-                                                                "dir" => configuration.fstab.dir = vva(value).unwrap_or_default(),
-                                                                "type" => configuration.fstab.type_ = vva(value).unwrap_or_default(),
-                                                                "opts" => configuration.fstab.opts = vva(value).unwrap_or_default(),
-                                                                "freq" => configuration.fstab.freq = value.as_u64().unwrap_or_default() as i32,
-                                                                "passno" => configuration.fstab.passno = value.as_u64().unwrap_or_default() as i32,
+                                                                "fsname" => {
+                                                                    configuration.fstab.fsname =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
+                                                                "dir" => {
+                                                                    configuration.fstab.dir =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
+                                                                "type" => {
+                                                                    configuration.fstab.type_ =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
+                                                                "opts" => {
+                                                                    configuration.fstab.opts =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
+                                                                "freq" => {
+                                                                    configuration.fstab.freq = value
+                                                                        .as_u64()
+                                                                        .unwrap_or_default()
+                                                                        as i32
+                                                                }
+                                                                "passno" => {
+                                                                    configuration.fstab.passno =
+                                                                        value
+                                                                            .as_u64()
+                                                                            .unwrap_or_default()
+                                                                            as i32
+                                                                }
                                                                 _ => {
                                                                     eprintln!("unhandled block config fstab key: {:?}, {:?}", key, value);
                                                                 }
@@ -120,13 +168,33 @@ impl ParseFrom for Block {
                                                         }
                                                     }
                                                 } else if key == "crypttab" {
-                                                    while let (Some(key), Some(value)) = (array.next(), array.next()) {
+                                                    while let (Some(key), Some(value)) =
+                                                        (array.next(), array.next())
+                                                    {
                                                         if let Some(key) = key.as_str() {
                                                             match key {
-                                                                "name" => configuration.crypttab.name = vva(value).unwrap_or_default(),
-                                                                "device" => configuration.crypttab.device = vva(value).unwrap_or_default(),
-                                                                "passphrase-path" => configuration.crypttab.passphrase_path = vva(value).unwrap_or_default(),
-                                                                "options" => configuration.crypttab.options = vva(value).unwrap_or_default(),
+                                                                "name" => {
+                                                                    configuration.crypttab.name =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
+                                                                "device" => {
+                                                                    configuration.crypttab.device =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
+                                                                "passphrase-path" => {
+                                                                    configuration
+                                                                        .crypttab
+                                                                        .passphrase_path =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
+                                                                "options" => {
+                                                                    configuration.crypttab.options =
+                                                                        vva(value)
+                                                                            .unwrap_or_default()
+                                                                }
                                                                 _ => {
                                                                     eprintln!("unhandled block config crypttab key: {:?}, {:?}", key, value);
                                                                 }
@@ -151,9 +219,8 @@ impl ParseFrom for Block {
                         }
                     }
                 }
-
             }
-            None => return None
+            None => return None,
         }
 
         for (key, object) in objects {
@@ -161,7 +228,7 @@ impl ParseFrom for Block {
                 "org.freedesktop.UDisks2.Block" => (),
                 "org.freedesktop.UDisks2.Swapspace" => {
                     block.swapspace = Some(object.get("Active").map_or(false, get_bool));
-                },
+                }
                 "org.freedesktop.UDisks2.PartitionTable" => {
                     let mut table = PartitionTable::default();
                     for (key, ref value) in object {
@@ -170,16 +237,19 @@ impl ParseFrom for Block {
                             "Partitions" => {
                                 table.partitions = get_string_array(value).unwrap_or_default();
                                 table.partitions.sort_unstable();
-                            },
+                            }
                             _ => {
                                 #[cfg(debug_assertions)]
-                                eprintln!("unhandled org.freedesktop.UDisks2.PartitionTable.{}", key);
+                                eprintln!(
+                                    "unhandled org.freedesktop.UDisks2.PartitionTable.{}",
+                                    key
+                                );
                             }
                         }
                     }
 
                     block.table = Some(table);
-                },
+                }
                 "org.freedesktop.UDisks2.Partition" => {
                     let mut partition = Partition::default();
                     for (key, value) in object {
@@ -187,7 +257,10 @@ impl ParseFrom for Block {
                             "Type" => partition.type_ = get_string(value).unwrap_or_default(),
                             "Name" => partition.name = get_string(value).unwrap_or_default(),
                             "UUID" => partition.uuid = get_string(value).unwrap_or_default(),
-                            "Table" => partition.table = get_string(value).expect("partition is not part of a table"),
+                            "Table" => {
+                                partition.table =
+                                    get_string(value).expect("partition is not part of a table")
+                            }
                             "Flags" => partition.flags = get_u64(value),
                             "Offset" => partition.offset = get_u64(value),
                             "Size" => partition.size = get_u64(value),
@@ -204,7 +277,8 @@ impl ParseFrom for Block {
                     block.partition = Some(partition);
                 }
                 "org.freedesktop.UDisks2.Filesystem" => {
-                    block.mount_points = object.get("MountPoints")
+                    block.mount_points = object
+                        .get("MountPoints")
                         .and_then(get_array_of_byte_arrays)
                         .map(|paths| paths.into_iter().map(PathBuf::from).collect::<Vec<_>>())
                         .unwrap_or_default()
@@ -213,9 +287,14 @@ impl ParseFrom for Block {
                     let mut encrypted = Encrypted::default();
                     for (key, ref value) in object {
                         match key.as_str() {
-                            "HintEncryptionType" => encrypted.hint_encryption_type = get_string(value).unwrap_or_default(),
+                            "HintEncryptionType" => {
+                                encrypted.hint_encryption_type =
+                                    get_string(value).unwrap_or_default()
+                            }
                             "MetadataSize" => encrypted.metadata_size = get_u64(value),
-                            "CleartextDevice" => encrypted.cleartext_device = get_string(value).unwrap_or_default(),
+                            "CleartextDevice" => {
+                                encrypted.cleartext_device = get_string(value).unwrap_or_default()
+                            }
                             _ => {
                                 #[cfg(debug_assertions)]
                                 eprintln!("unhandled org.freedesktop.UDisks2.Encrypted.{}", key);
@@ -239,32 +318,32 @@ impl ParseFrom for Block {
 #[derive(Clone, Debug, Default)]
 pub struct BlockConfiguration {
     pub fstab: BlockConfigurationFstab,
-    pub crypttab: BlockConfigurationCrypttab
+    pub crypttab: BlockConfigurationCrypttab,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct BlockConfigurationFstab {
-    fsname: String,
-    dir: String,
-    type_: String,
-    opts: String,
-    freq: i32,
-    passno: i32,
+    pub fsname: String,
+    pub dir: String,
+    pub type_: String,
+    pub opts: String,
+    pub freq: i32,
+    pub passno: i32,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct BlockConfigurationCrypttab {
-    name: String,
-    device: String,
-    passphrase_path: String,
-    options: String,
+    pub name: String,
+    pub device: String,
+    pub passphrase_path: String,
+    pub options: String,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct Encrypted {
     pub hint_encryption_type: String,
     pub metadata_size: u64,
-    pub cleartext_device: String
+    pub cleartext_device: String,
 }
 
 #[derive(Clone, Debug, Default)]
