@@ -164,7 +164,7 @@ pub struct SmartAttribute {
     /// 16-bit attribute flags (bit 0 is prefail/oldage, bit 1 is online/offline).
     pub flags: u16,
     /// The current value or -1 if unknown.
-    pub value: i32,
+    pub normalized: i32,
     /// The worst value of -1 if unknown.
     pub worst: i32,
     /// The threshold or -1 if unknown.
@@ -182,7 +182,7 @@ impl SmartAttribute {
         self.flags & 0x02 != 0
     }
     pub fn assessment(&self) -> SmartAssessment {
-        if self.value > 0 && self.threshold > 0 && self.value <= self.threshold {
+        if self.normalized > 0 && self.threshold > 0 && self.normalized <= self.threshold {
             SmartAssessment::Failing
         } else if self.worst > 0 && self.threshold > 0 && self.worst <= self.threshold {
             SmartAssessment::FailedInPast
@@ -206,7 +206,7 @@ impl From<RawSmartAttribute> for SmartAttribute {
             id,
             name,
             flags,
-            value,
+            normalized: value,
             worst,
             threshold,
             pretty,
