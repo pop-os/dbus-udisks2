@@ -9,6 +9,13 @@ use futures_util::join;
 use std::ops::Deref;
 use std::time::Duration;
 
+/// Async version of [`UDisks2`][crate::UDisks2].
+///
+/// This requires enabling the `futures` feature flag:
+/// ```toml
+/// [dependencies]
+/// dbus-udisks2 = { version = "0.3", features = ["futures"] }
+/// ```
 pub struct AsyncUDisks2<C> {
     conn: C,
     pub(crate) cache: DiskCache,
