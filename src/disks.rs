@@ -45,6 +45,13 @@ impl Disks {
                     parent,
                     partitions,
                 });
+            } else if partitions.len() == 1 {
+                // An unpartitioned drive should have only one Block
+                devices.push(DiskDevice {
+                    drive,
+                    parent: partitions.into_iter().next().unwrap(),
+                    partitions: vec![],
+                });
             }
         }
 
