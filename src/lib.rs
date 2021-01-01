@@ -75,6 +75,37 @@ pub struct UDisks2 {
     cache: DiskCache,
 }
 
+#[derive(Debug)]
+pub enum MountError {
+    /// This block device has no file system
+    NoFS,
+    DBUS(dbus::Error),
+}
+
+impl From<dbus::Error> for MountError {
+    fn from(e: dbus::Error) -> Self {
+        MountError::DBUS(e)
+    }
+}
+
+impl std::fmt::Display for MountError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MountError::NoFS => write!(f, "No filesystem found on block device"),
+            MountError::DBUS(e) => write!(f, "Could not (un)mount file system: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for MountError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            MountError::NoFS => None,
+            MountError::DBUS(e) => Some(e),
+        }
+    }
+}
+
 impl UDisks2 {
     pub fn new() -> Result<Self, dbus::Error> {
         let mut udisks2 = Self {
@@ -86,11 +117,19 @@ impl UDisks2 {
         Ok(udisks2)
     }
 
+    fn proxy_with_timeout<'a>(
+        &'a self,
+        path: impl Into<dbus::Path<'a>>,
+        timeout: Duration,
+    ) -> blocking::Proxy<&blocking::Connection> {
+        blocking::Proxy::new(DEST, path, timeout, &self.conn)
+    }
+
     fn proxy<'a>(
         &'a self,
         path: impl Into<dbus::Path<'a>>,
     ) -> blocking::Proxy<&blocking::Connection> {
-        blocking::Proxy::new(DEST, path, Duration::from_millis(3000), &self.conn)
+        self.proxy_with_timeout(path, Duration::from_millis(3000))
     }
 
     /// Refresh the managed objects fetched from the DBus server.
@@ -117,6 +156,84 @@ impl UDisks2 {
     /// An iterator of `Block` objects fetched from the inner cached managed objects.
     pub fn get_blocks<'a>(&'a self) -> impl Iterator<Item = Block> + 'a {
         self.cache.get_blocks()
+    }
+
+    /// Mount the file system on block device `block`. Returns the path where the file system is
+    /// mounted.  If `interactive` is true, the user may be interactively asked for a password to get
+    /// required privileges.
+    pub fn mount(
+        &self,
+        block: &Block,
+        interactive: bool,
+        fstype: Option<&str>,
+        mount_options: Option<&str>,
+        timeout: Duration,
+    ) -> Result<std::path::PathBuf, MountError> {
+        if !block.has_fs() {
+            return Err(MountError::NoFS);
+        }
+        let proxy = self.proxy_with_timeout(&block.path, timeout);
+        let mut options = KeyVariant::<&str>::new();
+        if !interactive {
+            options.insert("auth.no_user_interaction", Variant(Box::new(false)));
+        }
+        match fstype {
+            Some(t) => {
+                options.insert("fstype", Variant(Box::new(t.to_owned())));
+            }
+            None => (),
+        }
+        match mount_options {
+            Some(o) => {
+                options.insert("options", Variant(Box::new(o.to_owned())));
+            }
+            None => (),
+        }
+        let (path,): (String,) =
+            proxy.method_call("org.freedesktop.UDisks2.Filesystem", "Mount", (options,))?;
+        Ok(std::path::PathBuf::from(path))
+    }
+
+    /// Unmount the file system on block device `block`.
+    /// If `interactive` is true, the user may be interactively asked for a password
+    /// to get required privileges.
+    /// Fails if the filesystem is busy unless `force` is true.
+    pub fn unmount(
+        &self,
+        block: &Block,
+        interactive: bool,
+        force: bool,
+        timeout: Duration,
+    ) -> Result<(), MountError> {
+        if !block.has_fs() {
+            return Err(MountError::NoFS);
+        }
+        let proxy = self.proxy_with_timeout(&block.path, timeout);
+        let mut options = KeyVariant::<&str>::new();
+        if !interactive {
+            options.insert("auth.no_user_interaction", Variant(Box::new(false)));
+        }
+        options.insert("force", Variant(Box::new(force)));
+        proxy.method_call("org.freedesktop.UDisks2.Filesystem", "Unmount", (options,))?;
+        Ok(())
+    }
+
+    /// Eject the corresponding drive.
+    /// If `interactive` is true, the user may be interactively asked for a password
+    /// to get required privileges.
+    pub fn eject(
+        &self,
+        drive: &Drive,
+        interactive: bool,
+        timeout: Duration,
+    ) -> Result<(), dbus::Error> {
+        let proxy = self.proxy_with_timeout(&drive.path, timeout);
+        let mut options = KeyVariant::<&str>::new();
+        if !interactive {
+            options.insert("auth.no_user_interaction", Variant(Box::new(false)));
+        }
+        proxy.method_call("org.freedesktop.UDisks2.Drive", "Eject", (options,))?;
+        Ok(())
     }
 
     /// Update the S.M.A.R.T. attributes of a drive. You may pass either a `&`[`Drive`] or `&str`

@@ -27,6 +27,7 @@ pub struct Block {
     pub mdraid: PathBuf,
     pub mdraid_member: PathBuf,
     pub mount_points: Vec<PathBuf>,
+    pub fs_size: Option<u64>,
     pub partition: Option<Partition>,
     pub path: String,
     pub preferred_device: PathBuf,
@@ -52,6 +53,11 @@ impl Block {
         } else {
             None
         }
+    }
+
+    /// Returns true if the block device contains a file system
+    pub fn has_fs(&self) -> bool {
+        self.fs_size.is_some()
     }
 }
 
@@ -277,11 +283,24 @@ impl ParseFrom for Block {
                     block.partition = Some(partition);
                 }
                 "org.freedesktop.UDisks2.Filesystem" => {
-                    block.mount_points = object
-                        .get("MountPoints")
-                        .and_then(get_array_of_byte_arrays)
-                        .map(|paths| paths.into_iter().map(PathBuf::from).collect::<Vec<_>>())
-                        .unwrap_or_default()
+                    for (key, ref value) in object {
+                        match key.as_str() {
+                            "MountPoints" => {
+                                block.mount_points = get_array_of_byte_arrays(value)
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .map(PathBuf::from)
+                                    .collect::<Vec<_>>();
+                            }
+                            "Size" => {
+                                block.fs_size = Some(get_u64(value));
+                            }
+                            _ => {
+                                #[cfg(debug_assertions)]
+                                eprintln!("unhandled org.freedesktop.UDisks2.FileSystem.{}", key);
+                            }
+                        }
+                    }
                 }
                 "org.freedesktop.UDisks2.Encrypted" => {
                     let mut encrypted = Encrypted::default();
