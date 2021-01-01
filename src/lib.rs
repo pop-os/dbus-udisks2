@@ -218,6 +218,24 @@ impl UDisks2 {
         Ok(())
     }
 
+    /// Eject the corresponding drive.
+    /// If `interactive` is true, the user may be interactively asked for a password
+    /// to get required privileges.
+    pub fn eject(
+        &self,
+        drive: &Drive,
+        interactive: bool,
+        timeout: Duration,
+    ) -> Result<(), dbus::Error> {
+        let proxy = self.proxy_with_timeout(&drive.path, timeout);
+        let mut options = KeyVariant::<&str>::new();
+        if !interactive {
+            options.insert("auth.no_user_interaction", Variant(Box::new(false)));
+        }
+        proxy.method_call("org.freedesktop.UDisks2.Drive", "Eject", (options,))?;
+        Ok(())
+    }
+
     /// Update the S.M.A.R.T. attributes of a drive. You may pass either a `&`[`Drive`] or `&str`
     /// which is a path to a drive, starting with `/org/freedesktop/UDisks2/drives/`.
     pub fn smart_update<'a>(
