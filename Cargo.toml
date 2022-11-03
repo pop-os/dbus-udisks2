@@ -1,21 +1,21 @@
 [package]
 name = "dbus-udisks2"
 version = "0.3.0"
-edition = "2018"
+edition = "2021"
 description = "UDisks2 DBus API"
 repository = "https://github.com/pop-os/dbus-udisks2"
 authors = ["Michael Aaron Murphy <mmstickman@gmail.com>"]
-license = "MIT"
-readme = "README.md"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
-dbus = "0.9.0"
-num_enum = "0.5.1"
+dbus = "0.9.6"
+num_enum = "0.5.7"
 futures-util = { version = "0.3", features = ["async-await"], optional = true }
 
 [dev-dependencies]
-tokio = { version = "0.2.4", features = ["macros"] }
-dbus-tokio = "0.6.0"
+tokio = { version = "1.21.2", features = ["full"] }
+futures-util = { version = "0.3", features = ["async-await"]}
+dbus-tokio = "0.7.5"
 
 [features]
 futures = ["dbus/futures", "futures-util"]
